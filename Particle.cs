@@ -233,7 +233,7 @@ namespace частицы
             particle.Life = 20 + Particle.rand.Next(100);
             particle.Speed = 1 + Particle.rand.Next(10);
             particle.Direction = Particle.rand.Next(360);
-            particle.Radius = 2 + Particle.rand.Next(10);
+            particle.Radius = 1 + Particle.rand.Next(10);
             particle.X = Position.X;
             particle.Y = Position.Y;
         }
@@ -274,7 +274,7 @@ namespace частицы
             {
                 particleColorful.Life = 20 + Particle.rand.Next(100);
                 particleColorful.Speed = 1 + Particle.rand.Next(10);
-                particleColorful.Radius = this.Radius + Particle.rand.Next(10);
+                particleColorful.Radius = this.Radius + Particle.rand.Next(3);
 
                 particleColorful.FromColor = this.FromColor;
                 particleColorful.ToColor = Color.FromArgb(0, this.ToColor);
