@@ -12,58 +12,31 @@ namespace частицы
 {
     public partial class Form1 : Form
     {
-        List<Particle> particles = new List<Particle>();
+        List<DirectionColorfulEmiter> emiters = new List<DirectionColorfulEmiter>();
+
         public Form1()
         {
             InitializeComponent();
             picDisplay.Image = new Bitmap(picDisplay.Width, picDisplay.Height);
 
+            // размещаем произвольным образом 10 эмитеров
+            var rnd = new Random();
+            for (var i = 0; i < 16; ++i)
+            {
+                emiters.Add(new DirectionColorfulEmiter
+                {
+                    ParticlesCount = 40,
+                    Position = new Point(rnd.Next(picDisplay.Width), -20),
+                    Radius = 2 + rnd.Next(5),
+                });
+            }
         }
 
         private void UpdateState()
         {
-            foreach (var particle in particles)
+            foreach (var emiter in emiters)
             {
-                particle.Life -= 1;
-                if (particle.Life < 0)
-                {
-                    particle.Life = 20 + Particle.rand.Next(100);
-                    particle.Speed = 1 + Particle.rand.Next(10);
-                    // добавил направление движения -90 градусов +-15
-                    particle.Direction = -90 + 15 - Particle.rand.Next(30);
-                    particle.Radius = 2 + Particle.rand.Next(10);
-                    // генерировать вдоль верхней границы изображения
-                    particle.X = Particle.rand.Next(picDisplay.Image.Width);
-                    particle.Y = 0;
-                }
-                else
-                {
-                    var directionInRadians = particle.Direction / 180 * Math.PI;
-                    particle.X += (float)(particle.Speed * Math.Cos(directionInRadians));
-                    particle.Y -= (float)(particle.Speed * Math.Sin(directionInRadians));
-                }
-            }
-
-            for (var i = 0; i < 10; ++i)
-            {
-                if (particles.Count < 500)
-                {
-                    // снег белый, поэтому придется использовать ParticleColorful
-                    var particle = ParticleImage.Generate();
-                    particle.image = Properties.Resources.particle;
-
-
-                    // координата X вдоль всей верхней границы может оказаться
-                    particle.X = Particle.rand.Next(picDisplay.Image.Width);
-                    particle.Y = 0;
-                    // направление движения чтобы вниз
-                    particle.Direction = -90 + 15 - Particle.rand.Next(30);
-                    particles.Add(particle);
-                }
-                else
-                {
-                    break;
-                }
+                emiter.UpdateState();
             }
         }
 
@@ -71,10 +44,9 @@ namespace частицы
             // функция рендеринга
             private void Render(Graphics g)
         {
-            // утащили сюда отрисовку частиц
-            foreach (var particle in particles)
+            foreach (var emiter in emiters)
             {
-                particle.Draw(g);
+                emiter.Render(g);
             }
         }
 
@@ -92,14 +64,55 @@ namespace частицы
             picDisplay.Invalidate();
         }
 
-        private int MousePositionX = 0;
-        private int MousePositionY = 0;
+        
 
         private void PicDisplay_MouseMove(object sender, MouseEventArgs e)
         {
-            // в обработчике заносим положение мыши в переменные для хранения положения мыши
-            MousePositionX = e.X;
-            MousePositionY = e.Y;
+           
+        }
+
+        private void TbDirection_Scroll(object sender, EventArgs e)
+        {
+            foreach (var emiter in emiters)
+            {
+                emiter.Direction = tbDirection.Value;
+            }
+        }
+
+        private void TbSpread_Scroll(object sender, EventArgs e)
+        {
+            foreach (var emiter in emiters)
+            {
+                emiter.Spread = tbSpread.Value;
+            }
+        }
+
+        private void BtnFromColor_Click(object sender, EventArgs e)
+        {
+            var dialog = new ColorDialog();
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                // и тут
+                foreach (var emiter in emiters)
+                {
+                    emiter.FromColor = dialog.Color;
+                }
+                btnFromColor.BackColor = dialog.Color;
+            }
+        }
+
+        private void BtnToColor_Click(object sender, EventArgs e)
+        {
+            var dialog = new ColorDialog();
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                // и даже тут
+                foreach (var emiter in emiters)
+                {
+                    emiter.ToColor = dialog.Color;
+                }
+                btnToColor.BackColor = dialog.Color;
+            }
         }
     }
 }

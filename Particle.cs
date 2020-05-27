@@ -103,6 +103,8 @@ namespace частицы
     public class ParticleImage : Particle
     {
         public Image image;
+        public Color FromColor;
+        public Color ToColor;
 
         public new static ParticleImage Generate()
         {
@@ -117,9 +119,172 @@ namespace частицы
 
         public override void Draw(Graphics g)
         {
+            float k = Math.Min(1f, Life / 100);
 
-            g.DrawImage(image, X - Radius, Y - Radius, Radius * 2, Radius * 2);
+            var color = ParticleColorful.MixColor(ToColor, FromColor, k);
+
+            // матрица преобразования цвета
+            ColorMatrix matrix = new ColorMatrix(new float[][]{
+            new float[] {0, 0, 0, 0, 0}, // умножаем текущий красный цвет на 0
+            new float[] {0, 0, 0, 0, 0}, // умножаем текущий зеленый цвет на 0
+            new float[] {0, 0, 0, 0, 0}, // умножаем текущий синий цвет на 0
+            new float[] {0, 0, 0, k, 0}, // тут подставляем k который прозрачность задает
+            new float[] {(float)color.R / 255, (float)color.G / 255, (float)color.B/255, 0, 1F}});
+
+            // устанавливает матрицу в качестве атрибута
+            ImageAttributes imageAttributes = new ImageAttributes();
+            imageAttributes.SetColorMatrix(matrix);
+
+            g.DrawImage(image,
+                // куда рисовать
+                new Rectangle((int)(X - Radius), (int)(Y - Radius), Radius * 2, Radius * 2),
+                // и какую часть исходного изображения брать
+                0, 0, image.Width, image.Height,
+                GraphicsUnit.Pixel, // надо передать
+                imageAttributes // наши атрибуты с матрицей преобразования
+               );
         }
     }
+
+    public abstract class EmiterBase
+    {
+        List<Particle> particles = new List<Particle>();
+
+        // количество частиц эмитера храним в переменной
+        int particleCount = 0;
+        // и отдельной свойство которое возвращает количество частиц
+        public int ParticlesCount
+        {
+            get
+            {
+                return particleCount;
+            }
+            set
+            {
+                // при изменении этого значения
+                particleCount = value;
+                // удаляем лишние частицы если вдруг
+                if (value < particles.Count)
+                {
+                    particles.RemoveRange(value, particles.Count - value);
+                }
+            }
+        }
+
+        // три абстрактных метода мы их переопределим позже
+        public abstract void ResetParticle(Particle particle);
+        public abstract void UpdateParticle(Particle particle);
+        public abstract Particle CreateParticle();
+
+        // тут общая логика обновления состояния эмитера
+        // по сути копипаста
+        public void UpdateState()
+        {
+            foreach (var particle in particles)
+            {
+                particle.Life -= 1;
+                if (particle.Life < 0)
+                {
+                    ResetParticle(particle);
+                }
+                else
+                {
+                    UpdateParticle(particle);
+                }
+            }
+
+            for (var i = 0; i < 10; ++i)
+            {
+                if (particles.Count < 500)
+                {
+                    particles.Add(CreateParticle());
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+
+        public void Render(Graphics g)
+        {
+            foreach (var particle in particles)
+            {
+                particle.Draw(g);
+            }
+        }
+    }
+    public class PointEmiter : EmiterBase
+    {
+        public Point Position;
+
+        public override Particle CreateParticle()
+        {
+            var particle = ParticleColorful.Generate();
+            particle.FromColor = Color.Yellow;
+            particle.ToColor = Color.FromArgb(0, Color.Magenta);
+            particle.X = Position.X;
+            particle.Y = Position.Y;
+            return particle;
+        }
+
+        public override void ResetParticle(Particle particle)
+        {
+            particle.Life = 20 + Particle.rand.Next(100);
+            particle.Speed = 1 + Particle.rand.Next(10);
+            particle.Direction = Particle.rand.Next(360);
+            particle.Radius = 2 + Particle.rand.Next(10);
+            particle.X = Position.X;
+            particle.Y = Position.Y;
+        }
+
+        public override void UpdateParticle(Particle particle)
+        {
+            var directionInRadians = particle.Direction / 180 * Math.PI;
+            particle.X += (float)(particle.Speed * Math.Cos(directionInRadians));
+            particle.Y -= (float)(particle.Speed * Math.Sin(directionInRadians));
+        }
+    }
+
+    public class DirectionColorfulEmiter : PointEmiter
+    {
+        public int Direction = -90; // направление частиц
+        public int Spread = 110; // разброс частиц
+        public int Radius = 1;
+        public Color FromColor = Color.White; // исходный цвет
+        public Color ToColor = Color.White; // конечный цвет
+
+        public override Particle CreateParticle()
+        {
+            var particle = ParticleColorful.Generate();
+            particle.FromColor = this.FromColor;
+            particle.ToColor = Color.FromArgb(0, this.ToColor);
+            particle.Direction = this.Direction + Particle.rand.Next(-Spread / 2, Spread / 2);
+            particle.Radius = this.Radius + Particle.rand.Next(5);
+
+            particle.X = Position.X;
+            particle.Y = Position.Y;
+            return particle;
+        }
+
+        public override void ResetParticle(Particle particle)
+        {
+            var particleColorful = particle as ParticleColorful;
+            if (particleColorful != null)
+            {
+                particleColorful.Life = 20 + Particle.rand.Next(100);
+                particleColorful.Speed = 1 + Particle.rand.Next(10);
+                particleColorful.Radius = this.Radius + Particle.rand.Next(10);
+
+                particleColorful.FromColor = this.FromColor;
+                particleColorful.ToColor = Color.FromArgb(0, this.ToColor);
+                particleColorful.Direction = this.Direction + Particle.rand.Next(-Spread / 2, Spread / 2);
+
+                particleColorful.X = Position.X;
+                particleColorful.Y = Position.Y;    
+            }
+        }
+    }
+
 }
     
