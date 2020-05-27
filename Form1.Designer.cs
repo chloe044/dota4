@@ -60,11 +60,13 @@
             // tbDirection
             // 
             this.tbDirection.Location = new System.Drawing.Point(36, 12);
-            this.tbDirection.Maximum = 359;
+            this.tbDirection.Maximum = 340;
+            this.tbDirection.Minimum = 240;
             this.tbDirection.Name = "tbDirection";
             this.tbDirection.Size = new System.Drawing.Size(113, 45);
             this.tbDirection.TabIndex = 2;
             this.tbDirection.TickFrequency = 30;
+            this.tbDirection.Value = 300;
             this.tbDirection.Scroll += new System.EventHandler(this.TbDirection_Scroll);
             // 
             // tbSpread
